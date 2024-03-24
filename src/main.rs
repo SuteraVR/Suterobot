@@ -1,3 +1,4 @@
+use log::info;
 use poise::serenity_prelude as serenity;
 use std::env;
 
@@ -5,6 +6,8 @@ use dotenv::dotenv;
 
 struct Data {}
 type Error = Box<dyn std::error::Error + Send + Sync>;
+#[allow(unused)]
+type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[tokio::main]
 async fn main() {
@@ -16,14 +19,12 @@ async fn main() {
     let framework = poise::Framework::<Data, Error>::builder()
         .options(poise::FrameworkOptions {
             commands: vec![],
+            event_handler: |ctx, event, framework, data| {
+                Box::pin(event_handler(ctx, event, framework, data))
+            },
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
-            })
-        })
+        .setup(|_ctx, _ready, _framework| Box::pin(async move { Ok(Data {}) }))
         .build();
 
     let client = serenity::ClientBuilder::new(token, intents)
@@ -31,4 +32,16 @@ async fn main() {
         .await;
 
     client.unwrap().start().await.unwrap();
+}
+
+async fn event_handler(
+    _ctx: &serenity::Context,
+    event: &serenity::FullEvent,
+    _framework: poise::FrameworkContext<'_, Data, Error>,
+    _data: &Data,
+) -> Result<(), Error> {
+    if let serenity::FullEvent::Ready { data_about_bot, .. } = event {
+        info!("Logged in as {}", data_about_bot.user.name);
+    }
+    Ok(())
 }
