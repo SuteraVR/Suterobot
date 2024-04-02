@@ -32,13 +32,6 @@ jobs:
       with:
         buildkitd-config: ./buildkitd.toml
 
-    - name: Login to Harbor 
-      uses: docker/login-action@v3
-      with:
-        registry: harbor.aspulse.dev
-        username: ${{ secrets.HARBOR_ASPULSE_SUTERAVR_USERNAME }}
-        password: ${{ secrets.HARBOR_ASPULSE_SUTERAVR_PASSWORD }}
-
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -47,8 +40,8 @@ jobs:
         platforms: ${{ matrix.platform }}
         tags: ${{ env.TAG }}
         outputs: type=docker,dest=/tmp/images/${{ env.TARFILE }}
-        cache-from: harbor.aspulse.dev/suteravr/suterobot-cache:${{ env.PLATFORM }}
-        cache-to: type=registry,mode=max,image-manifest=true,ref=harbor.aspulse.dev/suteravr/suterobot-cache:${{ env.PLATFORM }}
+        cache-from: type=gha 
+        cache-to: type=gha,mode=max 
         secrets: |
           SCCACHE_ENDPOINT=${{ secrets.SCCACHE_ENDPOINT }}
           SCCACHE_AWS_ACCESS_KEY_ID=${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID }}
